@@ -10,17 +10,17 @@ import javax.persistence.*;
 public class LemmaEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    int id;
+    private int id;
 
     @ManyToOne
     @JoinColumn(columnDefinition = "INT NOT NULL", name = "site_id")
-    SiteEntity site;
+    private SiteEntity site;
 
     @Column(columnDefinition = "VARCHAR(255) NOT NULL")
-    String lemma;
+    private String lemma;
 
     @Column(columnDefinition = "INT NOT NULL")
-    int frequency;
+    private int frequency;
 
 
 

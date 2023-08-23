@@ -10,18 +10,18 @@ import javax.persistence.*;
 public class PageEnity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    int Id;
+    private int Id;
 
     @ManyToOne
     @JoinColumn(columnDefinition = "INT NOT NULL", name = "site_id")
-    SiteEntity site;
+    private SiteEntity site;
 
     @Column(columnDefinition = "TEXT NOT NULL")
-    String path;
+    private String path;
 
     @Column(columnDefinition = "INT NOT NULL")
-    int code;
+    private int code;
 
     @Column(columnDefinition = "MEDIUMTEXT NOT NULL")
-    String content;
+    private String content;
 }

@@ -11,16 +11,16 @@ public class IndexEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    int id;
+    private int id;
 
     @ManyToOne
     @JoinColumn(columnDefinition = "INT NOT NULL", name = "page_id")
-    PageEnity page;
+    private PageEnity page;
 
     @ManyToOne
     @JoinColumn(columnDefinition = "INT NOT NULL", name = "lemma_id")
-    LemmaEntity lemma;
+    private LemmaEntity lemma;
 
     @Column(columnDefinition = "FLOAT NOT NULL")
-    float rating;
+    private float rating;
 }

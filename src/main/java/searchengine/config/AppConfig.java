@@ -9,10 +9,12 @@ import org.springframework.stereotype.Component;
 
 @Component
 @ConfigurationProperties(prefix = "config")
-@Data
 public class AppConfig {
     @Value("userAgent")
-    private String userAgent;
+    @Getter
+    private static String userAgent;
     @Value("referrer")
-    private String referrer;
+    @Getter
+    private static String referrer;
+
 }

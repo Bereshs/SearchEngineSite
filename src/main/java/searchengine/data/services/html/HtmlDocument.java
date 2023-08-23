@@ -1,13 +1,15 @@
 package searchengine.data.services.html;
 
+import lombok.Getter;
+import org.jsoup.Connection;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import searchengine.model.PageEntity;
+import searchengine.model.SiteEntity;
 
-import java.net.URL;
-import java.util.ArrayList;
+import javax.print.Doc;
+import java.io.IOException;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -16,37 +18,39 @@ import java.util.regex.Pattern;
 
 public class HtmlDocument {
     private final Document document;
-    private Logger logger = Logger.getLogger(HtmlDocument.class.getName());
 
-    public HtmlDocument(Document document) {
-        this.document = document;
+    @Getter
+    private final int statusCode;
+    public HtmlDocument(Connection.Response connection) throws IOException {
+        this.statusCode = connection.statusCode();
+        this.document = connection.parse();
     }
-
-    public Set<HtmlLink> getHtmlLinkList() {
-        Set<HtmlLink> linkList = new HashSet<>();
+    public Set<PageEntity> getChildPageList(SiteEntity siteEntity) throws IOException {
+        Set<PageEntity> pageList = new HashSet<>();
         Elements elements = new Elements();
         elements = document.select("a[href]");
         elements.forEach(element -> {
-            HtmlLink link = new HtmlLink(element.attr("href"), getRootPath());
-            if (link.isValid()) {
-                linkList.add(link);
+            PageEntity page = new PageEntity();
+            page.setPath(element.attr("href"));
+            page.setContent(getHtml());
+            page.setSite(siteEntity);
+            page.setCode(getStatusCode());
+            if (page.isValid()) {
+                pageList.add(page);
             }
         });
-        return linkList;
-    }
-
-    public String getBody() {
-        return document.body().html();
+        return pageList;
     }
 
     public String getTitle() {
         return document.title();
     }
-
     public String getHtml() {
+        document.select("style").remove();
+        document.select("script").remove();
+        document.select("noscript").remove();
         return document.html();
     }
-
 
     public String getRootPath() {
         Pattern pattern = Pattern.compile("(https?://.*?/)");
@@ -54,7 +58,8 @@ public class HtmlDocument {
         if (matcher.find()) {
             return matcher.group(1);
         }
-
         return null;
     }
+
+
 }

@@ -15,7 +15,7 @@ public class IndexEntity {
 
     @ManyToOne
     @JoinColumn(columnDefinition = "INT NOT NULL", name = "page_id")
-    private PageEnity page;
+    private PageEntity page;
 
     @ManyToOne
     @JoinColumn(columnDefinition = "INT NOT NULL", name = "lemma_id")

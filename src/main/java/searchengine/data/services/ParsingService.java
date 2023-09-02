@@ -49,31 +49,34 @@ public class ParsingService {
 
     }
 
-    public SimpleResponse createPageIndex(String url) throws IOException {
+    public SimpleResponse indexPage(String url) {
+        HtmlDocument document =createPageIndex(url);
+        if(document==null) {
+            return  new SimpleResponse(false, "wrong address");
+        }
+        return new SimpleResponse(true);
+    }
+
+    public HtmlDocument createPageIndex(String url) {
         String errorMessage = "Данная страница находится за пределами сайтов, указанных в конфигурационном файле";
         logger.info("Start indexing page " + url);
         if (sitesList.contains(url)) {
             logger.info(errorMessage);
-            return new SimpleResponse(false, errorMessage);
+            return null;
         }
         setServicesToHtmlMapPage();
 
         PageEntity mainPage = new PageEntity();
         HtmlMapPage mapPage = new HtmlMapPage(mainPage);
-        HtmlDocument document = mapPage.createPageIndex(url);
-        if (document != null) {
-            return new SimpleResponse(true);
-        }
 
-        return new SimpleResponse(false, "Some error");
+        return mapPage.createPageIndex(mainPage.getAbsolutePath());
     }
+
 
     public void createSiteMap(String url) {
         setServicesToHtmlMapPage();
         logger.info("Start creating site map " + url);
         SiteEntity siteEntity = siteEntityService.getByUrl(url);
-
-        deleteOldDataSite(siteEntity);
 
         siteEntity = new SiteEntity(url);
         updateSiteEntity(siteEntity, SiteStatus.INDEXING);
@@ -153,7 +156,7 @@ public class ParsingService {
         do {
             logger.info("Active threads: " + pool.getActiveThreadCount() + " task count: " + pool.getQueuedTaskCount());
             try {
-                TimeUnit.SECONDS.sleep(1);
+                TimeUnit.SECONDS.sleep(60);
             } catch (InterruptedException e) {
                 logger.info(e.getMessage());
             }

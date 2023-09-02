@@ -3,16 +3,13 @@ package searchengine.data.services.html;
 
 import lombok.Getter;
 import lombok.Setter;
-import searchengine.config.SitesList;
 import searchengine.data.LemmaEntityService;
 import searchengine.data.PageEntityService;
 import searchengine.data.services.IndexEntityService;
 import searchengine.data.services.Morphology;
 import searchengine.data.services.SiteEntityService;
-import searchengine.dto.statistics.SimpleResponse;
 import searchengine.model.*;
 
-import javax.swing.text.Document;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.RecursiveTask;
@@ -36,7 +33,6 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
     @Getter
     @Setter
     private static boolean indexing;
-    private String url;
 
     public HtmlMapPage(PageEntity mainPage) {
         this.mainPage = mainPage;
@@ -58,23 +54,12 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
             viewedLinkList.add(mainPage.getAbsolutePath());
         }
 
-        try {
-            HtmlDocument document = new HtmlDocument(mainPage.getAbsolutePath());
-            Set<PageEntity> currentPageLinks = document.getChildPageList(mainPage.getSite());
-            document.removeUnUseTags();
-            mainPage.setContent(document.getHtml());
-            mainPage.setCode(document.getStatusCode());
-            pageEntityService.save(mainPage);
-            addToTaskList(currentPageLinks);
-    //        pageLemmasAnalizing(document.getText(), mainPage);
-        } catch (IOException e) {
-            logger.info(mainPage.getPath() + " error " + e.getLocalizedMessage());
-            mainPage.setCode(999);
-            mainPage.setContent(e.getLocalizedMessage());
-            pageEntityService.save(mainPage);
+        HtmlDocument document = createPageIndex(mainPage.getAbsolutePath());
+        Set<PageEntity> currentPageLinks = document.getChildPageList(mainPage.getSite());
+        if(currentPageLinks.isEmpty()) {
             return 0;
         }
-
+        addToTaskList(currentPageLinks);
 
         int result = 0;
         for (HtmlMapPage task : taskList) {
@@ -91,9 +76,6 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
             }
             if (!viewedLinkList.contains(link.getAbsolutePath())) {
                 HtmlMapPage task = new HtmlMapPage(link);
-                if (!link.isValid()) {
-                    continue;
-                }
                 task.setMainPage(link);
                 task.fork();
                 taskList.add(task);
@@ -124,12 +106,16 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
             siteEntityService.save(site);
             logger.info("Stop indexing page "+url);
             return document;
+
         } catch (IOException e) {
             String errorMessage = "Error indexing page "+mainPage.getPath() + " has  error " + e.getLocalizedMessage();
-            logger.info(errorMessage);
+            SiteEntity site = siteEntityService.getByUrl(url);
+            site.setLastError(e.getLocalizedMessage());
+            siteEntityService.save(site);
             mainPage.setCode(999);
             mainPage.setContent(e.getLocalizedMessage());
             pageEntityService.save(mainPage);
+            logger.info(errorMessage);
             return null;
         }
     }

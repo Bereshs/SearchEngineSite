@@ -21,12 +21,14 @@ public class HtmlDocument {
 
     @Getter
     private final int statusCode;
+
     public HtmlDocument(String url) throws IOException {
         Connection.Response connection = getConnection(url);
         this.statusCode = connection.statusCode();
         this.document = connection.parse();
     }
-    public Set<PageEntity> getChildPageList(SiteEntity siteEntity) throws IOException {
+
+    public Set<PageEntity> getChildPageList(SiteEntity siteEntity) {
         Set<PageEntity> pageList = new HashSet<>();
         Elements elements = new Elements();
         elements = document.select("a[href]");
@@ -46,23 +48,32 @@ public class HtmlDocument {
     public String getTitle() {
         return document.title();
     }
+
     public String getHtml() {
         return document.html();
     }
+
     public String getText() {
         return document.text();
     }
 
-    public String getLocation() {return document.location();}
+    public String getLocation() {
+        return document.location();
+    }
 
-    public void  removeUnUseTags() {
+    public void removeUnUseTags() {
         document.select("style").remove();
         document.select("script").remove();
         document.select("noscript").remove();
     }
+
     public String getRootPath() {
+        String location = document.location();
+        if (!location.endsWith("/")) {
+            location = location + "/";
+        }
         Pattern pattern = Pattern.compile("(https?://.*?/)");
-        Matcher matcher = pattern.matcher(document.location());
+        Matcher matcher = pattern.matcher(location);
         if (matcher.find()) {
             return matcher.group(0);
         }

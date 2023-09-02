@@ -65,8 +65,8 @@ public class ApiMainController {
     @GetMapping("/indexPage")
     public ResponseEntity<SimpleResponse> indexPage(@RequestParam String url) throws IOException {
         logger.info("Request for index page " + url);
-        parsingService.createPageIndex(url);
-        return ResponseEntity.ok(new SimpleResponse(true));
+//        parsingService.createPageIndex(url);
+        return ResponseEntity.ok(parsingService.indexPage(url));
     }
 
 }

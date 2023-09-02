@@ -7,6 +7,7 @@ import searchengine.model.SiteEntity;
 import searchengine.model.SiteStatus;
 
 import java.time.LocalDateTime;
+import java.util.logging.Logger;
 
 @Service
 public class SiteEntityService {
@@ -24,6 +25,7 @@ public class SiteEntityService {
         SiteEntity siteEntity = siteEntityRepository.getByUrl(document.getRootPath());
         if (siteEntity == null) {
             siteEntity = new SiteEntity();
+            Logger.getLogger("ssss").info("root path=" + document.getRootPath());
             siteEntity.setUrl(document.getRootPath());
             siteEntity.setName(document.getTitle());
             siteEntity.setStatus(SiteStatus.INDEXING);

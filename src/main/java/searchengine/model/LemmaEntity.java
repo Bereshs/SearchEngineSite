@@ -23,6 +23,4 @@ public class LemmaEntity {
     private int frequency;
 
 
-
-
 }

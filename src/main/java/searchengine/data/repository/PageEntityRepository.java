@@ -8,8 +8,9 @@ import java.util.List;
 
 @Repository
 public interface PageEntityRepository extends JpaRepository<PageEntity, Integer> {
-    public List<PageEntity> findBySiteId(int siteId);
+    List<PageEntity> findBySiteId(int siteId);
 
-    public PageEntity findByPathAndSiteId(String path, int siteId);
+    PageEntity findByPathAndSiteId(String path, int siteId);
 
+//    void deleteAll(List<PageEntity> pages);
 }

@@ -3,13 +3,15 @@ package searchengine.data.services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import searchengine.config.SitesList;
+import searchengine.data.LemmaEntityService;
+import searchengine.data.PageEntityService;
 import searchengine.data.services.html.HtmlDocument;
 import searchengine.data.services.html.HtmlMapPage;
+import searchengine.dto.statistics.SimpleResponse;
+import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.SiteStatus;
-import searchengine.data.repository.PageEntityRepository;
-import searchengine.data.repository.SiteEntityRepository;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -23,17 +25,22 @@ import static java.util.Objects.isNull;
 @Service
 public class ParsingService {
     private final SitesList sitesList;
-    private final SiteEntityRepository siteEntityRepository;
-    private final PageEntityRepository pageEntityRepository;
+    private final SiteEntityService siteEntityService;
+    private final PageEntityService pageEntityService;
+    private final LemmaEntityService lemmaEntityService;
+    private final IndexEntityService indexEntityService;
+
     private final Logger logger = Logger.getLogger(ParsingService.class.getName());
     private final ForkJoinPool pool = new ForkJoinPool();
     private HtmlMapPage page;
 
     @Autowired
-    public ParsingService(SitesList sitesList, SiteEntityRepository siteEntityRepository, PageEntityRepository pageEntityRepository) {
+    public ParsingService(SitesList sitesList, SiteEntityService siteEntityService, PageEntityService pageEntityService, LemmaEntityService lemmaEntityService, IndexEntityService indexEntityService) {
         this.sitesList = sitesList;
-        this.siteEntityRepository = siteEntityRepository;
-        this.pageEntityRepository = pageEntityRepository;
+        this.siteEntityService = siteEntityService;
+        this.pageEntityService = pageEntityService;
+        this.lemmaEntityService = lemmaEntityService;
+        this.indexEntityService = indexEntityService;
     }
 
     public void indexingSite(String url) {
@@ -42,44 +49,107 @@ public class ParsingService {
 
     }
 
-    public void createSiteMap(String url) {
-        HtmlMapPage.setPageRepository(pageEntityRepository);
-        logger.info("Start indexing " + url);
-        SiteEntity siteEntity = siteEntityRepository.getByUrl(url);
-        if (!isNull(siteEntity)) {
-            List<PageEntity> pagesToDelete = pageEntityRepository.findBySiteId(siteEntity.getId());
-            logger.info("Deleting " + pagesToDelete.size() + " available pages for "+siteEntity.getUrl());
-            pageEntityRepository.deleteAllById(pagesToDelete.stream().map(PageEntity::getId).toList());
-            logger.info("Deleting available sites");
-            siteEntityRepository.deleteById(siteEntity.getId());
-            logger.info("Preparing completed");
+    public SimpleResponse createPageIndex(String url) throws IOException {
+        String errorMessage = "Данная страница находится за пределами сайтов, указанных в конфигурационном файле";
+        logger.info("Start indexing page " + url);
+        if (sitesList.contains(url)) {
+            logger.info(errorMessage);
+            return new SimpleResponse(false, errorMessage);
+        }
+        setServicesToHtmlMapPage();
+
+        PageEntity mainPage = new PageEntity();
+        HtmlMapPage mapPage = new HtmlMapPage(mainPage);
+        HtmlDocument document = mapPage.createPageIndex(url);
+        if (document != null) {
+            return new SimpleResponse(true);
         }
 
-        siteEntity = new SiteEntity(url,
-                SiteStatus.INDEXING,
-                "unNamed");
-        updateSiteEntity(siteEntity);
+        return new SimpleResponse(false, "Some error");
+    }
+
+    public void createSiteMap(String url) {
+        setServicesToHtmlMapPage();
+        logger.info("Start creating site map " + url);
+        SiteEntity siteEntity = siteEntityService.getByUrl(url);
+
+        deleteOldDataSite(siteEntity);
+
+        siteEntity = new SiteEntity(url);
+        updateSiteEntity(siteEntity, SiteStatus.INDEXING);
 
         PageEntity mainPageEntity = new PageEntity();
         mainPageEntity.setSite(siteEntity);
-        mainPageEntity.setPath("");
 
         try {
-            HtmlDocument document = new HtmlDocument(mainPageEntity.getConnection());
+            HtmlDocument document = new HtmlDocument(mainPageEntity.getAbsolutePath());
             siteEntity.setName(document.getTitle());
-            updateSiteEntity(siteEntity);
+            updateSiteEntity(siteEntity, SiteStatus.INDEXING);
 
         } catch (IOException ex) {
             siteEntity.setLastError(ex.getMessage());
-            siteEntity.setStatus(SiteStatus.FAILED);
-            updateSiteEntity(siteEntity);
-            logger.info("Stopped indexing site" + mainPageEntity.getSite().getUrl() + " with error");
+            updateSiteEntity(siteEntity, SiteStatus.FAILED);
+            logger.info("Stopped indexing site " + mainPageEntity.getSite().getUrl() + " with error");
             return;
         }
 
         page = new HtmlMapPage(mainPageEntity);
         pool.execute(page);
 
+        loopPrintPoolInformation();
+
+        pool.shutdown();
+
+        if (!HtmlMapPage.isIndexing()) {
+            siteEntity.setLastError("Индексация остановлена пользователем");
+            updateSiteEntity(siteEntity, SiteStatus.FAILED);
+            return;
+        }
+        updateSiteEntity(siteEntity, SiteStatus.INDEXED);
+        logger.info("Stop indexing " + url + " found " + HtmlMapPage.getViewedLinkList().size() + " elements");
+    }
+
+
+    public void stop() {
+        Logger.getLogger(ParsingService.class.getName()).info("Stop index " + sitesList.getSites().size() + " sites");
+        HtmlMapPage.setIndexing(false);
+    }
+
+    private void updateSiteEntity(SiteEntity siteEntity, SiteStatus siteStatus) {
+        siteEntity.setStatus(siteStatus);
+        siteEntity.setStatusTime(LocalDateTime.now());
+        siteEntityService.save(siteEntity);
+        logger.info(siteEntity.getStatus().toString() + " site " + siteEntity.getUrl() + " with message " + siteEntity.getLastError());
+    }
+
+    private void deleteSiteAndPageEntitiesBySite(SiteEntity siteEntity) {
+        List<PageEntity> pagesToDelete = pageEntityService.findBySiteId(siteEntity.getId());
+
+        logger.info("Deleting " + pagesToDelete.size() + " available lemmas indexes for " + siteEntity.getUrl());
+        pagesToDelete.forEach(indexEntityService::deleteAllByPage);
+
+        logger.info("Deleting " + pagesToDelete.size() + " available pages for " + siteEntity.getUrl());
+        pageEntityService.deleteAllById(pagesToDelete.stream().map(PageEntity::getId).toList());
+        logger.info("Deleting available sites");
+        siteEntityService.deleteById(siteEntity.getId());
+        logger.info("Preparing completed");
+    }
+
+    private void deleteLemmasIndexesBySite(SiteEntity siteEntity) {
+        logger.info("Getting lemmas list ");
+        List<LemmaEntity> lemmaToDelete = lemmaEntityService.getLemmaEntitiesBySite(siteEntity);
+        logger.info("Deleting" + lemmaToDelete.size() + " lemmas");
+        lemmaEntityService.deleteAllById(lemmaToDelete.stream().map(LemmaEntity::getId).toList());
+    }
+
+    void deleteOldDataSite(SiteEntity siteEntity) {
+        if (!isNull(siteEntity)) {
+            deleteSiteAndPageEntitiesBySite(siteEntity);
+            deleteLemmasIndexesBySite(siteEntity);
+        }
+    }
+
+    void loopPrintPoolInformation() {
         do {
             logger.info("Active threads: " + pool.getActiveThreadCount() + " task count: " + pool.getQueuedTaskCount());
             try {
@@ -88,25 +158,13 @@ public class ParsingService {
                 logger.info(e.getMessage());
             }
         } while (!page.isDone());
-        pool.shutdown();
-
-
-        siteEntity.setStatus(SiteStatus.INDEXED);
-        updateSiteEntity(siteEntity);
-    //    int size = page.join();
-        logger.info("Stop indexing " + url + " found " + HtmlMapPage.getViewedLinkList().size() + " elements");
-        logger.info("Saved database");
     }
 
-
-    public void stop() {
-        Logger.getLogger(ParsingService.class.getName()).info("Stop index " + sitesList.getSites().size() + " sites");
-    }
-
-    public void updateSiteEntity(SiteEntity siteEntity) {
-        siteEntity.setStatusTime(LocalDateTime.now());
-        siteEntityRepository.save(siteEntity);
-        logger.info(siteEntity.getStatus().toString() + " site " + siteEntity.getUrl() + " with message " + siteEntity.getLastError());
+    public void setServicesToHtmlMapPage() {
+        HtmlMapPage.setPageEntityService(pageEntityService);
+        HtmlMapPage.setLemmaEntityService(lemmaEntityService);
+        HtmlMapPage.setIndexEntityService(indexEntityService);
+        HtmlMapPage.setSiteEntityService(siteEntityService);
     }
 
 }

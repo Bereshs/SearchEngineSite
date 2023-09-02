@@ -32,10 +32,9 @@ public class SiteEntity {
     @Column(columnDefinition = "VARCHAR(255) NOT NULL")
     private String name;
 
-    public SiteEntity(String url, SiteStatus status, String name) {
+    public SiteEntity(String url) {
         setUrl(url);
-        setStatus(status);
-        setName(name);
+        setName("unNamed");
         setStatusTime(LocalDateTime.now());
     }
 

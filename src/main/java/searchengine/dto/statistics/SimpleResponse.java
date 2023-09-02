@@ -8,7 +8,12 @@ public class SimpleResponse {
     boolean result;
     String error;
 
-    public SimpleResponse (boolean result) {
+    public SimpleResponse(boolean result) {
         this.result = result;
+    }
+
+    public SimpleResponse(boolean result, String error) {
+        this.result = result;
+        this.error = error;
     }
 }

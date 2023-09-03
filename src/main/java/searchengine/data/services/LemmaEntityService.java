@@ -1,4 +1,4 @@
-package searchengine.data;
+package searchengine.data.services;
 
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
@@ -43,7 +43,6 @@ public class LemmaEntityService {
             lemma.setFrequency(0);
         }
         int frequency = lemma.getFrequency();
-        frequency++;
         lemma.setFrequency(frequency);
 
         lemmaEntityRepository.save(lemma);
@@ -62,5 +61,10 @@ public class LemmaEntityService {
         saveAll(newList);
         return newList;
     }
+
+    public long getCount() {
+        return lemmaEntityRepository.count();
+    }
+
 
 }

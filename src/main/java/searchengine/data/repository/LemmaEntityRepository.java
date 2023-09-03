@@ -12,4 +12,5 @@ public interface LemmaEntityRepository extends JpaRepository<LemmaEntity, Intege
     LemmaEntity getLemmaEntityByLemmaAndSite(String lemma,  SiteEntity site);
 
 
+    long countAllBySite(SiteEntity site);
 }

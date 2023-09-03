@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.logging.Logger;
 
 @Data
@@ -28,10 +27,13 @@ public class Morphology {
 
 
     public void createLemmasMap(String text) throws IOException {
+        if(!HtmlMapPage.isIndexing()) {
+            return;
+        }
         String withoutPunctText = text.replaceAll("\\p{Punct}", "").toLowerCase();
         logger.info("Creating lemmas, received text " + withoutPunctText.length()+"bytes ");
         int firstIndex = 0;
-        int lastIndex = 0;
+        int lastIndex;
         while (firstIndex < withoutPunctText.length()) {
             lastIndex = withoutPunctText.indexOf(' ', firstIndex);
             if (lastIndex < 0) {

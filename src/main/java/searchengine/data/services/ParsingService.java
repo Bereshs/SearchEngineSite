@@ -3,9 +3,6 @@ package searchengine.data.services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import searchengine.config.SitesList;
-import searchengine.data.LemmaEntityService;
-import searchengine.data.PageEntityService;
-import searchengine.data.services.html.HtmlDocument;
 import searchengine.data.services.html.HtmlMapPage;
 import searchengine.dto.statistics.SimpleResponse;
 import searchengine.model.LemmaEntity;
@@ -13,14 +10,11 @@ import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.SiteStatus;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-
-import static java.util.Objects.isNull;
 
 @Service
 public class ParsingService {
@@ -31,8 +25,8 @@ public class ParsingService {
     private final IndexEntityService indexEntityService;
 
     private final Logger logger = Logger.getLogger(ParsingService.class.getName());
-    private final ForkJoinPool pool = new ForkJoinPool();
-    private HtmlMapPage page;
+    private ForkJoinPool pool = new ForkJoinPool();
+    //private HtmlMapPage page;
 
     @Autowired
     public ParsingService(SitesList sitesList, SiteEntityService siteEntityService, PageEntityService pageEntityService, LemmaEntityService lemmaEntityService, IndexEntityService indexEntityService) {
@@ -50,72 +44,61 @@ public class ParsingService {
     }
 
     public SimpleResponse indexPage(String url) {
-        HtmlDocument document =createPageIndex(url);
-        if(document==null) {
-            return  new SimpleResponse(false, "wrong address");
+        if (!createPageIndex(url, false)) {
+            return new SimpleResponse(false, "wrong address");
         }
         return new SimpleResponse(true);
     }
 
-    public HtmlDocument createPageIndex(String url) {
+    public boolean createPageIndex(String url, boolean checkChilds) {
         String errorMessage = "Данная страница находится за пределами сайтов, указанных в конфигурационном файле";
         logger.info("Start indexing page " + url);
-        if (sitesList.contains(url)) {
+        HtmlMapPage.setIndexing(true);
+        if (!sitesList.contains(url)) {
             logger.info(errorMessage);
-            return null;
+            return false;
+        }
+        if (pool.isShutdown()) {
+            pool = new ForkJoinPool();
         }
         setServicesToHtmlMapPage();
 
         PageEntity mainPage = new PageEntity();
         HtmlMapPage mapPage = new HtmlMapPage(mainPage);
+        SiteEntity site = new SiteEntity(url);
+        mainPage.setSite(site);
+        mapPage.setCheckChilds(checkChilds);
+        addAndRunPool(mapPage);
 
-        return mapPage.createPageIndex(mainPage.getAbsolutePath());
+
+        return true;
     }
 
 
     public void createSiteMap(String url) {
-        setServicesToHtmlMapPage();
-        logger.info("Start creating site map " + url);
-        SiteEntity siteEntity = siteEntityService.getByUrl(url);
 
-        siteEntity = new SiteEntity(url);
-        updateSiteEntity(siteEntity, SiteStatus.INDEXING);
-
-        PageEntity mainPageEntity = new PageEntity();
-        mainPageEntity.setSite(siteEntity);
-
-        try {
-            HtmlDocument document = new HtmlDocument(mainPageEntity.getAbsolutePath());
-            siteEntity.setName(document.getTitle());
-            updateSiteEntity(siteEntity, SiteStatus.INDEXING);
-
-        } catch (IOException ex) {
-            siteEntity.setLastError(ex.getMessage());
-            updateSiteEntity(siteEntity, SiteStatus.FAILED);
-            logger.info("Stopped indexing site " + mainPageEntity.getSite().getUrl() + " with error");
-            return;
-        }
-
-        page = new HtmlMapPage(mainPageEntity);
-        pool.execute(page);
-
-        loopPrintPoolInformation();
-
-        pool.shutdown();
-
-        if (!HtmlMapPage.isIndexing()) {
-            siteEntity.setLastError("Индексация остановлена пользователем");
-            updateSiteEntity(siteEntity, SiteStatus.FAILED);
-            return;
-        }
-        updateSiteEntity(siteEntity, SiteStatus.INDEXED);
+        createPageIndex(url, true);
         logger.info("Stop indexing " + url + " found " + HtmlMapPage.getViewedLinkList().size() + " elements");
     }
 
 
+    public void addAndRunPool(HtmlMapPage pageHtml) {
+        pool.execute(pageHtml);
+
+        loopPrintPoolInformation(pageHtml);
+    }
+
     public void stop() {
         Logger.getLogger(ParsingService.class.getName()).info("Stop index " + sitesList.getSites().size() + " sites");
         HtmlMapPage.setIndexing(false);
+        sitesList.getSites().forEach(site -> {
+            SiteEntity siteEntity = siteEntityService.getByUrl(site.getUrl());
+            if (siteEntity.getStatus().equals(SiteStatus.INDEXING)) {
+                siteEntity.setLastError("Индексация остановлена пользователем");
+                updateSiteEntity(siteEntity, SiteStatus.FAILED);
+            }
+        });
+
     }
 
     private void updateSiteEntity(SiteEntity siteEntity, SiteStatus siteStatus) {
@@ -145,22 +128,18 @@ public class ParsingService {
         lemmaEntityService.deleteAllById(lemmaToDelete.stream().map(LemmaEntity::getId).toList());
     }
 
-    void deleteOldDataSite(SiteEntity siteEntity) {
-        if (!isNull(siteEntity)) {
-            deleteSiteAndPageEntitiesBySite(siteEntity);
-            deleteLemmasIndexesBySite(siteEntity);
-        }
-    }
 
-    void loopPrintPoolInformation() {
+    void loopPrintPoolInformation(HtmlMapPage page) {
         do {
-            logger.info("Active threads: " + pool.getActiveThreadCount() + " task count: " + pool.getQueuedTaskCount());
             try {
-                TimeUnit.SECONDS.sleep(60);
+                TimeUnit.SECONDS.sleep(5);
             } catch (InterruptedException e) {
                 logger.info(e.getMessage());
             }
-        } while (!page.isDone());
+            logger.info("Active threads: " + pool.getActiveThreadCount() + " task count: " + pool.getQueuedTaskCount());
+        } while (page.isDone());
+        pool.shutdown();
+        logger.info("ForkJoin pool shutting down");
     }
 
     public void setServicesToHtmlMapPage() {

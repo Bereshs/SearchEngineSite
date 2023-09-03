@@ -8,4 +8,5 @@ import searchengine.model.SiteEntity;
 public interface SiteEntityRepository extends JpaRepository<SiteEntity, Integer> {
     SiteEntity getByUrl(String url);
 
+
 }

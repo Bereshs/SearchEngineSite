@@ -3,8 +3,8 @@ package searchengine.data.services.html;
 
 import lombok.Getter;
 import lombok.Setter;
-import searchengine.data.LemmaEntityService;
-import searchengine.data.PageEntityService;
+import searchengine.data.services.LemmaEntityService;
+import searchengine.data.services.PageEntityService;
 import searchengine.data.services.IndexEntityService;
 import searchengine.data.services.Morphology;
 import searchengine.data.services.SiteEntityService;
@@ -34,14 +34,17 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
     @Setter
     private static boolean indexing;
 
+    @Setter
+    private boolean checkChilds;
+
     public HtmlMapPage(PageEntity mainPage) {
         this.mainPage = mainPage;
-        indexing = true;
+        checkChilds = true;
     }
 
     @Override
     protected Integer compute() {
-        if (!indexing) {
+        if (!isIndexing()) {
             return 0;
         }
 
@@ -55,17 +58,21 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
         }
 
         HtmlDocument document = createPageIndex(mainPage.getAbsolutePath());
-        Set<PageEntity> currentPageLinks = document.getChildPageList(mainPage.getSite());
-        if(currentPageLinks.isEmpty()) {
+        if (!checkChilds) {
             return 0;
         }
+        Set<PageEntity> currentPageLinks = document.getChildPageList(mainPage.getSite());
+        if (currentPageLinks.isEmpty()) {
+            return 0;
+        }
+
+
         addToTaskList(currentPageLinks);
 
         int result = 0;
         for (HtmlMapPage task : taskList) {
             result += task.join();
         }
-//        System.gc();
         return result;
     }
 
@@ -88,27 +95,33 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
     }
 
     public HtmlDocument createPageIndex(String url) {
+        if (!isIndexing()) {
+            return null;
+        }
         logger.info("Start indexing page " + url);
         try {
             HtmlDocument document = new HtmlDocument(url);
             Morphology morphology = new Morphology();
-            morphology.createLemmasMap(document.getText());
-
-            logger.info("created " + morphology.getLemmas().size() + " lemmas  on " + url);
             SiteEntity site = siteEntityService.getByUrlAndDocument(url, document);
-            PageEntity page = pageEntityService.getBySiteAndDocument(site, document);
+            if (!site.getStatus().equals(SiteStatus.INDEXING)) {
+                site.setStatus(SiteStatus.INDEXING);
+                siteEntityService.save(site);
+            }
 
-            lemmaEntityService.getLemmaEntitiesBySite(site);
-            List<LemmaEntity> lemmaEntities = lemmaEntityService.saveLemmasFromList(morphology.getLemmas(), site);
-            logger.info("Saving indexes structure for page "+url);
-            indexEntityService.saveIndexFromList(lemmaEntities, page);
+            morphology.createLemmasMap(document.getText());
+            logger.info("created " + morphology.getLemmas().size() + " lemmas  on " + url);
+            PageEntity page = pageEntityService.getBySiteAndDocument(site, document);
+            HashMap<String, Integer> lemmasMap = morphology.getLemmas();
+            List<LemmaEntity> lemmaEntities = lemmaEntityService.saveLemmasFromList(lemmasMap, site);
+            logger.info("Saving indexes structure for page " + url);
+            indexEntityService.saveIndexFromList(lemmaEntities, page, lemmasMap);
             site.setStatus(SiteStatus.INDEXED);
             siteEntityService.save(site);
-            logger.info("Stop indexing page "+url);
+            logger.info("Stop indexing page " + url);
             return document;
 
         } catch (IOException e) {
-            String errorMessage = "Error indexing page "+mainPage.getPath() + " has  error " + e.getLocalizedMessage();
+            String errorMessage = "Error indexing page " + mainPage.getPath() + " has  error " + e.getLocalizedMessage();
             SiteEntity site = siteEntityService.getByUrl(url);
             site.setLastError(e.getLocalizedMessage());
             siteEntityService.save(site);

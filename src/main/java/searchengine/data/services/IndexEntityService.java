@@ -5,7 +5,9 @@ import searchengine.data.repository.IndexEntityRepository;
 import searchengine.model.IndexEntity;
 import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -29,13 +31,13 @@ public class IndexEntityService {
         indexEntityRepository.saveAll(indexEntityList);
     }
 
-    public void saveIndexFromList(List<LemmaEntity> lemmaEntities, PageEntity page) {
+    public void saveIndexFromList(List<LemmaEntity> lemmaEntities, PageEntity page, HashMap<String, Integer> lemmasFrequency) {
         List<IndexEntity> indexEntities = new ArrayList<>();
-        lemmaEntities.forEach(lemmaEntity -> {
+        lemmaEntities.forEach(lemma -> {
             IndexEntity indexEntity = new IndexEntity();
-            indexEntity.setRating(lemmaEntity.getFrequency());
+            indexEntity.setRating(lemmasFrequency.get(lemma.getLemma()));
             indexEntity.setPage(page);
-            indexEntity.setLemma(lemmaEntity);
+            indexEntity.setLemma(lemma);
             indexEntities.add(indexEntity);
         });
         saveAll(indexEntities);

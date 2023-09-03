@@ -1,4 +1,4 @@
-package searchengine.data;
+package searchengine.data.services;
 
 import org.springframework.stereotype.Service;
 import searchengine.data.repository.PageEntityRepository;
@@ -49,6 +49,14 @@ public class PageEntityService {
         page.setContent(document.getHtml());
         pageEntityRepository.save(page);
         return page;
+    }
+
+    public long getCount() {
+        return pageEntityRepository.count();
+    }
+
+    public long getCountBySite(SiteEntity site) {
+        return pageEntityRepository.countAllBySite(site);
     }
 }
 

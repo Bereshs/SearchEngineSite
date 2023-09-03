@@ -3,6 +3,7 @@ package searchengine.data.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import searchengine.model.PageEntity;
+import searchengine.model.SiteEntity;
 
 import java.util.List;
 
@@ -12,5 +13,5 @@ public interface PageEntityRepository extends JpaRepository<PageEntity, Integer>
 
     PageEntity findByPathAndSiteId(String path, int siteId);
 
-//    void deleteAll(List<PageEntity> pages);
+    long countAllBySite(SiteEntity site);
 }

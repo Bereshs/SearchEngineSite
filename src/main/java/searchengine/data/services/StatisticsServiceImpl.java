@@ -4,14 +4,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
+import searchengine.data.repository.LemmaEntityRepository;
+import searchengine.data.repository.PageEntityRepository;
+import searchengine.data.repository.SiteEntityRepository;
 import searchengine.dto.statistics.DetailedStatisticsItem;
 import searchengine.dto.statistics.StatisticsData;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.dto.statistics.TotalStatistics;
+import searchengine.model.SiteEntity;
 
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Logger;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +25,11 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     private final Random random = new Random();
     private final SitesList sites;
+
+    private final PageEntityRepository pageEntityRepository;
+    private final LemmaEntityRepository lemmaEntityRepository;
+    private final SiteEntityRepository siteEntityRepository;
+
 
     @Override
     public StatisticsResponse getStatistics() {
@@ -30,7 +41,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         };
 
         TotalStatistics total = new TotalStatistics();
-        total.setSites(sites.getSites().size());
+        total.setSites((int) siteEntityRepository.count());
         total.setIndexing(true);
 
         List<DetailedStatisticsItem> detailed = new ArrayList<>();
@@ -40,14 +51,17 @@ public class StatisticsServiceImpl implements StatisticsService {
             DetailedStatisticsItem item = new DetailedStatisticsItem();
             item.setName(site.getName());
             item.setUrl(site.getUrl());
-            int pages = random.nextInt(1_000);
-            int lemmas = pages * random.nextInt(1_000);
+            SiteEntity siteEntity = siteEntityRepository.getByUrl(site.getUrl());
+            if(siteEntity==null) {
+                continue;
+            }
+            int pages = (int) pageEntityRepository.countAllBySite(siteEntity);
+            int lemmas = (int) lemmaEntityRepository.countAllBySite(siteEntity);
             item.setPages(pages);
             item.setLemmas(lemmas);
-            item.setStatus(statuses[i % 3]);
-            item.setError(errors[i % 3]);
-            item.setStatusTime(System.currentTimeMillis() -
-                    (random.nextInt(10_000)));
+            item.setStatus(siteEntity.getStatus().toString());
+            item.setError(siteEntity.getLastError()==null?"":siteEntity.getLastError());
+            item.setStatusTime(siteEntity.getStatusTime().toInstant(ZoneOffset.ofTotalSeconds(10800)).toEpochMilli());
             total.setPages(total.getPages() + pages);
             total.setLemmas(total.getLemmas() + lemmas);
             detailed.add(item);

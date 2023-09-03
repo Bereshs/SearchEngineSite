@@ -45,8 +45,8 @@ public class ApiMainController {
 
         }
         sitesIndexingList.getSites().forEach(site -> new Thread(() -> {
+            logger.info("Creating thred for "+site.getName());
             parsingService.indexingSite(site.getUrl());
-            Logger.getLogger("creating thread ").info(site.getName());
         }).start());
 
         return ResponseEntity.ok(new SimpleResponse(true));
@@ -62,7 +62,7 @@ public class ApiMainController {
         return ResponseEntity.ok(new SimpleResponse(false, "Индексация не запущена"));
     }
 
-    @GetMapping("/indexPage")
+    @PostMapping("/indexPage")
     public ResponseEntity<SimpleResponse> indexPage(@RequestParam String url) throws IOException {
         logger.info("Request for index page " + url);
 //        parsingService.createPageIndex(url);

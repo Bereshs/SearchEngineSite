@@ -3,6 +3,7 @@ package searchengine.data.services;
 import org.springframework.stereotype.Service;
 import searchengine.data.repository.SiteEntityRepository;
 import searchengine.data.services.html.HtmlDocument;
+import searchengine.dto.statistics.TotalStatistics;
 import searchengine.model.SiteEntity;
 import searchengine.model.SiteStatus;
 
@@ -25,7 +26,6 @@ public class SiteEntityService {
         SiteEntity siteEntity = siteEntityRepository.getByUrl(document.getRootPath());
         if (siteEntity == null) {
             siteEntity = new SiteEntity();
-            Logger.getLogger("ssss").info("root path=" + document.getRootPath());
             siteEntity.setUrl(document.getRootPath());
             siteEntity.setName(document.getTitle());
             siteEntity.setStatus(SiteStatus.INDEXING);
@@ -41,5 +41,9 @@ public class SiteEntityService {
 
     public void deleteById(int id) {
         siteEntityRepository.deleteById(id);
+    }
+
+    public long getCount() {
+        return siteEntityRepository.count();
     }
 }

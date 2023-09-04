@@ -50,7 +50,8 @@ public class PageEntity implements Comparable<PageEntity> {
                 && absolutePath.contains(rootPath)
                 //            && !absolutePath.equals(rootPath)
                 && !path.matches("^(tel|mailto|tg):.*$")
-                && !path.matches(".+[pdf|jpg]$");
+                && !path.matches(".+[pdf|jpg]$")
+                && !path.contains("#");
     }
 
 

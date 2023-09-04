@@ -26,11 +26,11 @@ public class Morphology {
 
 
     public void createLemmasMap(String text) throws IOException {
-        if(!HtmlMapPage.isIndexing()) {
+        if (!HtmlMapPage.isIndexing()) {
             return;
         }
         String withoutPunctText = text.replaceAll("\\p{Punct}", "").toLowerCase();
-        logger.info("Creating lemmas, received text " + withoutPunctText.length()+"bytes ");
+        logger.info("Creating lemmas, received text " + withoutPunctText.length() + "bytes ");
         int firstIndex = 0;
         int lastIndex;
         while (firstIndex < withoutPunctText.length()) {
@@ -63,7 +63,7 @@ public class Morphology {
 
     public List<String> createLemmasList(String word) throws IOException {
         LuceneMorphology luceneMorph = getLuceneMorphology(word);
-        if(luceneMorph==null) {
+        if (luceneMorph == null) {
             return new ArrayList<>();
         }
         List<String> info = luceneMorph.getMorphInfo(word);
@@ -97,13 +97,13 @@ public class Morphology {
     }
 
     private LuceneMorphology getLuceneMorphology(String word) throws IOException {
-        if(word.length()<=2){
+        if (word.length() <= 2) {
             return null;
         }
         String ru = "[а-яА-Я]+";
         String en = "[a-zA-z]+";
         if (word.matches(ru)) {
-            return  new RussianLuceneMorphology();
+            return new RussianLuceneMorphology();
         } else if (word.matches(en)) {
             return new EnglishLuceneMorphology();
         }

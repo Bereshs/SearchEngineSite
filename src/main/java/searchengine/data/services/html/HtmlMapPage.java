@@ -52,8 +52,11 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
             return 0;
         }
 
+
         synchronized (viewedLinkList) {
+
             viewedLinkList.add(mainPage.getAbsolutePath());
+            logger.info("viewwed links=" + viewedLinkList);
         }
 
         HtmlDocument document = createPageIndex(mainPage.getAbsolutePath());
@@ -80,7 +83,7 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
             if (!link.isValid()) {
                 continue;
             }
-            if (!viewedLinkList.contains(link.getAbsolutePath())) {
+            if (viewedLinkContains(link.getAbsolutePath())) {
                 HtmlMapPage task = new HtmlMapPage(link);
                 task.setMainPage(link);
                 task.fork();
@@ -91,6 +94,14 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
             }
         }
 
+    }
+
+    private boolean viewedLinkContains(String link) {
+        String newLink = link + "/";
+        if (link.endsWith("/")) {
+            newLink = link.substring(0, link.length() - 1);
+        }
+        return !viewedLinkList.contains(link) && !viewedLinkList.contains(newLink);
     }
 
     public HtmlDocument createPageIndex(String url) {
@@ -106,7 +117,6 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
                 site.setStatus(SiteStatus.INDEXING);
                 siteEntityService.save(site);
             }
-
             morphology.createLemmasMap(document.getText());
             logger.info("created " + morphology.getLemmas().size() + " lemmas  on " + url);
             PageEntity page = pageEntityService.getBySiteAndDocument(site, document);

@@ -30,8 +30,8 @@ public class LemmaEntityService {
         return lemmaEntityRepository.getLemmaEntitiesBySite(site);
     }
 
-    public void deleteAllById(Iterable<? extends Integer> lemmas) {
-        lemmaEntityRepository.deleteAllById(lemmas);
+    public void deleteAllBySite (SiteEntity site) {
+        lemmaEntityRepository.deleteAllBySite(site);
     }
 
     public LemmaEntity getByLemmaAndSite(String word, SiteEntity site) {
@@ -70,4 +70,6 @@ public class LemmaEntityService {
     public List<LemmaEntity> getAllByLemma(String lemma) {
         return lemmaEntityRepository.getAllByLemmaOrderByFrequencyAsc(lemma);
     }
+
+
 }

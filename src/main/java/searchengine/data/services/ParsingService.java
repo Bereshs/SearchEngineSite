@@ -15,6 +15,8 @@ import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class ParsingService {
@@ -63,15 +65,33 @@ public class ParsingService {
         }
         setServicesToHtmlMapPage();
 
+        SiteEntity site = siteEntityService.getByUrl(url);
+        if (site != null) {
+            PageEntity page = pageEntityService.findByPathAndSiteId(url, site.getId());
+            deleteSearchIndexByPage(page);
+
+            if (isRootPath(url, site.getUrl())) {
+                deleteLemmasBySite(site);
+                deleteSiteAndPageEntities(site);
+            }
+        }
+        site = siteEntityService.getByUrlOrCreate(url);
+
         PageEntity mainPage = new PageEntity();
-        HtmlMapPage mapPage = new HtmlMapPage(mainPage);
-        SiteEntity site = new SiteEntity(url);
         mainPage.setSite(site);
+        mainPage.setPath(url);
+        HtmlMapPage mapPage = new HtmlMapPage(mainPage);
+
         mapPage.setCheckChilds(checkChilds);
+
         addAndRunPool(mapPage);
 
 
         return true;
+    }
+
+    public boolean isRootPath(String path, String rootPath) {
+        return path.equals(rootPath);
     }
 
 
@@ -108,12 +128,9 @@ public class ParsingService {
         logger.info(siteEntity.getStatus().toString() + " site " + siteEntity.getUrl() + " with message " + siteEntity.getLastError());
     }
 
-    private void deleteSiteAndPageEntitiesBySite(SiteEntity siteEntity) {
+
+    private void deleteSiteAndPageEntities(SiteEntity siteEntity) {
         List<PageEntity> pagesToDelete = pageEntityService.findBySiteId(siteEntity.getId());
-
-        logger.info("Deleting " + pagesToDelete.size() + " available lemmas indexes for " + siteEntity.getUrl());
-        pagesToDelete.forEach(indexEntityService::deleteAllByPage);
-
         logger.info("Deleting " + pagesToDelete.size() + " available pages for " + siteEntity.getUrl());
         pageEntityService.deleteAllById(pagesToDelete.stream().map(PageEntity::getId).toList());
         logger.info("Deleting available sites");
@@ -121,13 +138,14 @@ public class ParsingService {
         logger.info("Preparing completed");
     }
 
-    private void deleteLemmasIndexesBySite(SiteEntity siteEntity) {
-        logger.info("Getting lemmas list ");
-        List<LemmaEntity> lemmaToDelete = lemmaEntityService.getLemmaEntitiesBySite(siteEntity);
-        logger.info("Deleting" + lemmaToDelete.size() + " lemmas");
-        lemmaEntityService.deleteAllById(lemmaToDelete.stream().map(LemmaEntity::getId).toList());
+    private void deleteLemmasBySite(SiteEntity siteEntity) {
+        logger.info("Deleting lemmas by site");
+        lemmaEntityService.deleteAllBySite(siteEntity);
     }
 
+    private void deleteSearchIndexByPage(PageEntity page) {
+        indexEntityService.deleteAllByPage(page);
+    }
 
     void loopPrintPoolInformation(HtmlMapPage page) {
         do {
@@ -137,9 +155,9 @@ public class ParsingService {
                 logger.info(e.getMessage());
             }
             logger.info("Active threads: " + pool.getActiveThreadCount() + " task count: " + pool.getQueuedTaskCount());
-        } while (page.isDone());
-        pool.shutdown();
-        logger.info("ForkJoin pool shutting down");
+        } while (!pool.isShutdown() && page.isDone() && pool.getActiveThreadCount() > 0);
+    //    pool.shutdown();
+    //    logger.info("ForkJoin pool shutting down");
     }
 
     public void setServicesToHtmlMapPage() {

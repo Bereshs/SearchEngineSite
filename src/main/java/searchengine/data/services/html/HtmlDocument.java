@@ -58,11 +58,14 @@ public class HtmlDocument {
     }
 
     public String getLocation() {
-        if(document.location().contains(getRootPath())) {
-            int startPath=document.location().indexOf(getRootPath())+getRootPath().length();
-            return  document.location().substring(startPath);
+        String location = document.location();
+        if (location.contains(getRootPath())) {
+            int startPath = location.indexOf(getRootPath()) + getRootPath().length();
+            String path = location.substring(startPath);
+            return path.startsWith("/") ? path : "/" + path;
         }
-        return document.location();
+        return location;
+
 
     }
 
@@ -80,7 +83,8 @@ public class HtmlDocument {
         Pattern pattern = Pattern.compile("(https?://.*?/)");
         Matcher matcher = pattern.matcher(location);
         if (matcher.find()) {
-            return matcher.group(0);
+            String result = matcher.group(0);
+            return result.substring(0, result.length() - 1);
         }
         return null;
     }

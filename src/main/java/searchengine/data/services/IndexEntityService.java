@@ -42,4 +42,8 @@ public class IndexEntityService {
         });
         saveAll(indexEntities);
     }
+
+    public List<IndexEntity> findByLemma(LemmaEntity lemma) {
+        return indexEntityRepository.findByLemma(lemma);
+    }
 }

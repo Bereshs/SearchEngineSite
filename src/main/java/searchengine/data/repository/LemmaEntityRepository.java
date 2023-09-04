@@ -17,4 +17,6 @@ public interface LemmaEntityRepository extends JpaRepository<LemmaEntity, Intege
     List<LemmaEntity> getAllByLemmaOrderByFrequencyAsc(String lemma);
 
     void deleteAllBySite(SiteEntity site);
+
+    LemmaEntity findByLemma(String lemma);
 }

@@ -1,6 +1,8 @@
 package searchengine.data.services.html;
 
 
+import searchengine.model.LemmaEntity;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -39,6 +41,7 @@ public class Paragraph {
         }
         return result.toString();
     }
+
     private int calculateEndPosition(int index, int start) {
         int end = index+paragraphSize/2;
         if(start==0) {
@@ -59,9 +62,15 @@ public class Paragraph {
         return start;
     }
 
-    public String getParagraph(String word) {
+    public String getParagraph(List<LemmaEntity> list) {
         getList();
-        int index = getIndexWord(word);
-        return makeParagraph(index);
+
+        for(LemmaEntity lemma: list) {
+            int index = getIndexWord(lemma.getLemma());
+            if(index>0) {
+                return makeParagraph(index);
+            }
+        }
+        return makeParagraph(0);
     }
 }

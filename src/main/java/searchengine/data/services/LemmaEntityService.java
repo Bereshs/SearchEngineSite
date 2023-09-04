@@ -6,9 +6,8 @@ import searchengine.data.repository.LemmaEntityRepository;
 import searchengine.model.LemmaEntity;
 import searchengine.model.SiteEntity;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.logging.Logger;
 
 @Service
 public class LemmaEntityService {
@@ -72,4 +71,15 @@ public class LemmaEntityService {
     }
 
 
+    public List<LemmaEntity> getlemmaListByLemmaList(HashMap<String, Integer> lemmaList) {
+        List<LemmaEntity> lemmaEntityListFromDb = new ArrayList<>();
+        lemmaList.forEach((lemma,value) -> {
+            LemmaEntity lemmaEntity = lemmaEntityRepository.findByLemma(lemma);
+            if(lemmaEntity!=null) {
+                lemmaEntityListFromDb.add(lemmaEntity);
+            }
+        });
+        Collections.sort(lemmaEntityListFromDb);
+        return lemmaEntityListFromDb;
+    }
 }

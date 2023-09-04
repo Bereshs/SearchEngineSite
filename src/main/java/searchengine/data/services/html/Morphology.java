@@ -26,10 +26,7 @@ public class Morphology {
 
 
     public void createLemmasMap(String text) throws IOException {
-        if (!HtmlMapPage.isIndexing()) {
-            return;
-        }
-        String withoutPunctText = text.replaceAll("\\p{Punct}", "").toLowerCase();
+        String withoutPunctText = text.replaceAll("\\p{Punct}", "").toLowerCase()+" ";
         logger.info("Creating lemmas, received text " + withoutPunctText.length() + "bytes ");
         int firstIndex = 0;
         int lastIndex;
@@ -44,7 +41,7 @@ public class Morphology {
         }
     }
 
-    public List<LemmaEntity> getLemmaEntityList(SiteEntity siteEntity, List<LemmaEntity> lemmaEntityList) {
+    public List<LemmaEntity> getLemmaEntityListBySite(SiteEntity siteEntity, List<LemmaEntity> lemmaEntityList) {
         List<LemmaEntity> newList = new ArrayList<>();
         lemmas.forEach((key, value) -> {
             LemmaEntity result = lemmaEntityList.stream()

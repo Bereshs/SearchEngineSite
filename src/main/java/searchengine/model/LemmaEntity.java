@@ -3,11 +3,12 @@ package searchengine.model;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.util.logging.Logger;
 
 @Data
 @Entity
 @Table(name = "lemma")
-public class LemmaEntity {
+public class LemmaEntity implements Comparable<LemmaEntity> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
@@ -20,7 +21,11 @@ public class LemmaEntity {
     private String lemma;
 
     @Column(columnDefinition = "INT NOT NULL")
-    private int frequency;
+    private Integer frequency;
 
 
+    @Override
+    public int compareTo(LemmaEntity o) {
+        return frequency.compareTo(o.frequency);
+    }
 }

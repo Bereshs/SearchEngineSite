@@ -19,7 +19,7 @@ public class SitesList {
     public boolean contains(String url) {
         AtomicBoolean result = new AtomicBoolean(false);
         for(Site site:sites) {
-            if(url.equals(site.getUrl())) {
+            if(url.contains(site.getUrl())) {
                 result.set(true);
                 break;
             }

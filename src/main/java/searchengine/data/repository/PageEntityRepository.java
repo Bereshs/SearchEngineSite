@@ -14,4 +14,7 @@ public interface PageEntityRepository extends JpaRepository<PageEntity, Integer>
     PageEntity findByPathAndSiteId(String path, int siteId);
 
     long countAllBySite(SiteEntity site);
+
+    PageEntity findById(int id);
+
 }

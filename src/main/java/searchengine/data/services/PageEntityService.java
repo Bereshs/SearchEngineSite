@@ -58,5 +58,7 @@ public class PageEntityService {
     public long getCountBySite(SiteEntity site) {
         return pageEntityRepository.countAllBySite(site);
     }
+
+    public PageEntity findById(int id) {return pageEntityRepository.findById(id);}
 }
 

@@ -6,7 +6,6 @@ import lombok.Setter;
 import searchengine.data.services.LemmaEntityService;
 import searchengine.data.services.PageEntityService;
 import searchengine.data.services.IndexEntityService;
-import searchengine.data.services.Morphology;
 import searchengine.data.services.SiteEntityService;
 import searchengine.model.*;
 

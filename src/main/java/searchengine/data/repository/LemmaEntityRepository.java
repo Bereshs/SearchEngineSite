@@ -13,4 +13,6 @@ public interface LemmaEntityRepository extends JpaRepository<LemmaEntity, Intege
 
 
     long countAllBySite(SiteEntity site);
+
+    List<LemmaEntity> getAllByLemmaOrderByFrequencyAsc(String lemma);
 }

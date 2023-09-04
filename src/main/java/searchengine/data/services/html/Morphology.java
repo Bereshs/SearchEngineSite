@@ -1,10 +1,9 @@
-package searchengine.data.services;
+package searchengine.data.services.html;
 
 import lombok.Data;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.english.EnglishLuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
-import searchengine.data.services.html.HtmlMapPage;
 import searchengine.model.LemmaEntity;
 import searchengine.model.SiteEntity;
 
@@ -62,7 +61,7 @@ public class Morphology {
     }
 
 
-    private List<String> createLemmasList(String word) throws IOException {
+    public List<String> createLemmasList(String word) throws IOException {
         LuceneMorphology luceneMorph = getLuceneMorphology(word);
         if(luceneMorph==null) {
             return new ArrayList<>();

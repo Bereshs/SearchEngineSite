@@ -9,6 +9,7 @@ import java.io.IOException;
 
 @Entity
 @Table(name = "page")
+//@Table(name = "page", indexes = {@Index(columnList = "path", name = "path_index")})
 @Data
 public class PageEntity implements Comparable<PageEntity> {
     @Id

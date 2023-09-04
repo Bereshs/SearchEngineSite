@@ -67,4 +67,7 @@ public class LemmaEntityService {
     }
 
 
+    public List<LemmaEntity> getAllByLemma(String lemma) {
+        return lemmaEntityRepository.getAllByLemmaOrderByFrequencyAsc(lemma);
+    }
 }

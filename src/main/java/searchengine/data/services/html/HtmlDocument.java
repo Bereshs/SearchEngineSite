@@ -58,7 +58,12 @@ public class HtmlDocument {
     }
 
     public String getLocation() {
+        if(document.location().contains(getRootPath())) {
+            int startPath=document.location().indexOf(getRootPath())+getRootPath().length();
+            return  document.location().substring(startPath);
+        }
         return document.location();
+
     }
 
     public void removeUnUseTags() {

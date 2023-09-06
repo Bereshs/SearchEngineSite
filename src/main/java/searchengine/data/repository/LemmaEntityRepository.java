@@ -19,6 +19,7 @@ public interface LemmaEntityRepository extends JpaRepository<LemmaEntity, Intege
 
     void deleteAllBySite(SiteEntity site);
 
+
     LemmaEntity findByLemma(String lemma);
 
     LemmaEntity findByLemmaAndSite(String lemma, SiteEntity site);

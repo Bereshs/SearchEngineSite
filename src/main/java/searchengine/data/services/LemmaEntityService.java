@@ -6,9 +6,12 @@ import searchengine.data.repository.LemmaEntityRepository;
 import searchengine.model.LemmaEntity;
 import searchengine.model.SiteEntity;
 
+import javax.transaction.Transactional;
 import java.util.*;
 import java.util.logging.Logger;
 
+
+@Transactional
 @Service
 public class LemmaEntityService {
     private final LemmaEntityRepository lemmaEntityRepository;

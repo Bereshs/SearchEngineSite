@@ -69,12 +69,11 @@ public class ParsingService {
 
 
             if (isRootPath(url, site.getUrl())) {
-                deleteLemmasBySite(site);
+
                 deleteSiteAndPageEntities(site);
             }
         }
-    //    logger.info("exiting "+site);
-    //    return  true;
+
 
         site = siteEntityService.getByUrlOrCreate(url);
 
@@ -132,9 +131,15 @@ public class ParsingService {
 
     private void deleteSiteAndPageEntities(SiteEntity siteEntity) {
         List<PageEntity> pagesToDelete = pageEntityService.findBySiteId(siteEntity.getId());
+        logger.info("Deleting Index entities " + siteEntity.getUrl());
+        pagesToDelete.forEach(indexEntityService::deleteAllByPage);
         logger.info("Deleting " + pagesToDelete.size() + " available pages for " + siteEntity.getUrl());
+
         pageEntityService.deleteAllById(pagesToDelete.stream().map(PageEntity::getId).toList());
         logger.info("Deleting available sites");
+
+        deleteLemmasBySite(siteEntity);
+
         siteEntityService.deleteById(siteEntity.getId());
         logger.info("Preparing completed");
     }

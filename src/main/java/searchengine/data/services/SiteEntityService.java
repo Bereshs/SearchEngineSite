@@ -1,15 +1,12 @@
 package searchengine.data.services;
 
 import org.springframework.stereotype.Service;
-import searchengine.config.Site;
 import searchengine.data.repository.SiteEntityRepository;
 import searchengine.data.services.html.HtmlDocument;
-import searchengine.dto.statistics.TotalStatistics;
 import searchengine.model.SiteEntity;
 import searchengine.model.SiteStatus;
 
 import java.time.LocalDateTime;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,7 +35,7 @@ public class SiteEntityService {
         return siteEntity;
     }
 
-    public SiteEntity getByUrlAndDocument(String url, HtmlDocument document) {
+    public SiteEntity getByDocument(HtmlDocument document) {
         SiteEntity siteEntity = siteEntityRepository.getByUrl(getRootPath(document.getRootPath()));
         if (siteEntity == null) {
             siteEntity = new SiteEntity();
@@ -77,5 +74,10 @@ public class SiteEntityService {
             return result.substring(0, result.length() - 1);
         }
         return null;
+    }
+
+    public String getRelativePath(String path) {
+        String rootPath=getRootPath(path);
+        return path.substring(rootPath.length());
     }
 }

@@ -112,7 +112,7 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
         try {
             HtmlDocument document = new HtmlDocument(url);
             Morphology morphology = new Morphology();
-            SiteEntity site = siteEntityService.getByUrlAndDocument(url, document);
+            SiteEntity site = siteEntityService.getByDocument(document);
             if (!site.getStatus().equals(SiteStatus.INDEXING)) {
                 site.setStatus(SiteStatus.INDEXING);
                 siteEntityService.save(site);

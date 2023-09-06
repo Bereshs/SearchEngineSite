@@ -29,7 +29,7 @@ public class LemmaEntityService {
         return lemmaEntityRepository.getLemmaEntitiesBySite(site);
     }
 
-    public void deleteAllBySite (SiteEntity site) {
+    public void deleteAllBySite(SiteEntity site) {
         lemmaEntityRepository.deleteAllBySite(site);
     }
 
@@ -71,11 +71,16 @@ public class LemmaEntityService {
     }
 
 
-    public List<LemmaEntity> getlemmaListByLemmaList(HashMap<String, Integer> lemmaList) {
+    public List<LemmaEntity> getlemmaListByLemmaList(HashMap<String, Integer> lemmaList, SiteEntity site) {
         List<LemmaEntity> lemmaEntityListFromDb = new ArrayList<>();
-        lemmaList.forEach((lemma,value) -> {
-            LemmaEntity lemmaEntity = lemmaEntityRepository.findByLemma(lemma);
-            if(lemmaEntity!=null) {
+        lemmaList.forEach((lemma, value) -> {
+            LemmaEntity lemmaEntity = new LemmaEntity();
+            if (site != null) {
+                lemmaEntity = lemmaEntityRepository.findByLemmaAndSite(lemma, site);
+            } else {
+                lemmaEntity = lemmaEntityRepository.findByLemma(lemma);
+            }
+            if (lemmaEntity != null) {
                 lemmaEntityListFromDb.add(lemmaEntity);
             }
         });

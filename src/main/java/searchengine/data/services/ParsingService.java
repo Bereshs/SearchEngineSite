@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 import searchengine.config.SitesList;
 import searchengine.data.services.html.HtmlMapPage;
 import searchengine.dto.statistics.SimpleResponse;
-import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.SiteStatus;
@@ -15,8 +14,6 @@ import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Service
 public class ParsingService {
@@ -28,7 +25,6 @@ public class ParsingService {
 
     private final Logger logger = Logger.getLogger(ParsingService.class.getName());
     private ForkJoinPool pool = new ForkJoinPool();
-    //private HtmlMapPage page;
 
     @Autowired
     public ParsingService(SitesList sitesList, SiteEntityService siteEntityService, PageEntityService pageEntityService, LemmaEntityService lemmaEntityService, IndexEntityService indexEntityService) {
@@ -46,18 +42,18 @@ public class ParsingService {
     }
 
     public SimpleResponse indexPage(String url) {
+        String errorMessage = "Данная страница находится за пределами сайтов, указанных в конфигурационном файле";
         if (!createPageIndex(url, false)) {
-            return new SimpleResponse(false, "wrong address");
+            logger.info(errorMessage);
+            return new SimpleResponse(false, errorMessage);
         }
         return new SimpleResponse(true);
     }
 
     public boolean createPageIndex(String url, boolean checkChilds) {
-        String errorMessage = "Данная страница находится за пределами сайтов, указанных в конфигурационном файле";
         logger.info("Start indexing page " + url);
         HtmlMapPage.setIndexing(true);
         if (!sitesList.contains(url)) {
-            logger.info(errorMessage);
             return false;
         }
         if (pool.isShutdown()) {
@@ -67,14 +63,19 @@ public class ParsingService {
 
         SiteEntity site = siteEntityService.getByUrl(url);
         if (site != null) {
-            PageEntity page = pageEntityService.findByPathAndSiteId(url, site.getId());
+            String relativePath= siteEntityService.getRelativePath(url);
+            PageEntity page = pageEntityService.findByPathAndSiteId(relativePath, site.getId());
             deleteSearchIndexByPage(page);
+
 
             if (isRootPath(url, site.getUrl())) {
                 deleteLemmasBySite(site);
                 deleteSiteAndPageEntities(site);
             }
         }
+    //    logger.info("exiting "+site);
+    //    return  true;
+
         site = siteEntityService.getByUrlOrCreate(url);
 
         PageEntity mainPage = new PageEntity();
@@ -144,6 +145,7 @@ public class ParsingService {
     }
 
     private void deleteSearchIndexByPage(PageEntity page) {
+        logger.info("deleting searchindex by page");
         indexEntityService.deleteAllByPage(page);
     }
 
@@ -156,8 +158,6 @@ public class ParsingService {
             }
             logger.info("Active threads: " + pool.getActiveThreadCount() + " task count: " + pool.getQueuedTaskCount());
         } while (!pool.isShutdown() && page.isDone() && pool.getActiveThreadCount() > 0);
-    //    pool.shutdown();
-    //    logger.info("ForkJoin pool shutting down");
     }
 
     public void setServicesToHtmlMapPage() {

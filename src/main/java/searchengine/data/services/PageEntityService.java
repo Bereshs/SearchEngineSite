@@ -1,11 +1,15 @@
 package searchengine.data.services;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import searchengine.data.repository.PageEntityRepository;
 import searchengine.data.services.html.HtmlDocument;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 
+import javax.persistence.criteria.CriteriaBuilder;
 import java.util.List;
 
 @Service
@@ -60,5 +64,6 @@ public class PageEntityService {
     }
 
     public PageEntity findById(int id) {return pageEntityRepository.findById(id);}
+
 }
 

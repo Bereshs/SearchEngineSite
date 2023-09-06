@@ -1,9 +1,10 @@
 package searchengine.dto.statistics;
 
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SimpleResponse {
     boolean result;
     String error;

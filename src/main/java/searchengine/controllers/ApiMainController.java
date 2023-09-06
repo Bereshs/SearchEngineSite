@@ -1,5 +1,6 @@
 package searchengine.controllers;
 
+import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,17 +16,17 @@ import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.model.IndexEntity;
 import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
+import searchengine.model.SiteEntity;
 
-import javax.persistence.criteria.CriteriaBuilder;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/api")
+@Api("All API Operations")
 public class ApiMainController {
 
     private final StatisticsService statisticsService;
@@ -35,16 +36,19 @@ public class ApiMainController {
     private final PageEntityService pageEntityService;
     private final IndexEntityService indexEntityService;
 
+    private final SiteEntityService siteEntityService;
+
     private final Logger logger = Logger.getLogger(ApiMainController.class.getName());
 
     @Autowired
-    public ApiMainController(StatisticsService statisticsService, ParsingService parsingService, SitesList sitesIndexingList, LemmaEntityService lemmaEntityService, PageEntityService pageEntityService, IndexEntityService indexEntityService) {
+    public ApiMainController(StatisticsService statisticsService, ParsingService parsingService, SitesList sitesIndexingList, LemmaEntityService lemmaEntityService, PageEntityService pageEntityService, IndexEntityService indexEntityService, SiteEntityService siteEntityService) {
         this.statisticsService = statisticsService;
         this.parsingService = parsingService;
         this.sitesIndexingList = sitesIndexingList;
         this.lemmaEntityService = lemmaEntityService;
         this.pageEntityService = pageEntityService;
         this.indexEntityService = indexEntityService;
+        this.siteEntityService = siteEntityService;
     }
 
     @GetMapping("/statistics")
@@ -80,38 +84,43 @@ public class ApiMainController {
     }
 
     @PostMapping("/indexPage")
-    public ResponseEntity<SimpleResponse> indexPage(@RequestParam String url) throws IOException {
+    public ResponseEntity<SimpleResponse> indexPage(@RequestParam String url) {
         logger.info("Request for index page " + url);
-//        parsingService.createPageIndex(url);
         return ResponseEntity.ok(parsingService.indexPage(url));
     }
 
     @GetMapping("/search")
-    public ResponseEntity<SearchResponse> search(String query, int offset, int limit) throws IOException {
+    public ResponseEntity<SearchResponse> search(String site, String query, int offset, int limit) throws IOException {
         Morphology morphology = new Morphology();
         SearchResponse response = new SearchResponse();
         morphology.createLemmasMap(query);
-
-        List<LemmaEntity> list = lemmaEntityService.getlemmaListByLemmaList(morphology.getLemmas());
+        SiteEntity siteEntity = siteEntityService.getByUrl(site);
+        List<LemmaEntity> list = lemmaEntityService.getlemmaListByLemmaList(morphology.getLemmas(), siteEntity);;
         List<IndexEntity> listIndex = getUniqueIndexEntities(list);
-
-        logger.info("ssss");
-        listIndex.forEach(page -> {
-            logger.info(page.getPage().getPath() + " rating =" + page.getRating());
-        });
-
-
         float maxRating = getMaxRatingPage(listIndex);
+        listIndex.forEach(indexPage -> response.getData().add(createSearchDataFromIndexPage(indexPage, maxRating, list)));
 
-
-        listIndex.forEach(indexPage -> {
-            response.getData().add(createSearchDataFromIndexPage(indexPage, maxRating, list));
-        });
         Collections.sort(response.getData());
 
         response.setCount(response.getData().size());
+        response.setData(getPageOfList(response.getData(), offset, limit));
         response.setResult(true);
+
         return ResponseEntity.ok(response);
+    }
+
+    public List<SearchData> getPageOfList(List<SearchData> list, Integer offset, Integer limit) {
+        List<SearchData> result = new ArrayList<>();
+        int startIndex = offset;
+        int endIndex = startIndex + limit;
+        if (endIndex > list.size()) {
+            endIndex = list.size();
+        }
+
+        for (int i = startIndex; i < endIndex; i++) {
+            result.add(list.get(i));
+        }
+        return result;
     }
 
 
@@ -125,10 +134,10 @@ public class ApiMainController {
 
 
     private List<IndexEntity> getUniqueIndexEntities(List<LemmaEntity> list) {
-        List<IndexEntity> lemmaOldList = indexEntityService.findByLemma(list.get(0));//indlemmaEntityService.getAllByLemma(list.get(0).getLemma());
-        List<IndexEntity> resultIndex = new ArrayList<>();
+        List<IndexEntity> lemmaOldList = indexEntityService.findByLemma(list.get(0));
+        List<IndexEntity> resultIndex = lemmaOldList;
         for (int i = 1; i < list.size(); i++) {
-            List<IndexEntity> lemmaList = indexEntityService.findByLemma(list.get(i));//indlemmaEntityService.getAllByLemma(list.get(0).getLemma());
+            List<IndexEntity> lemmaList = indexEntityService.findByLemma(list.get(i));
             resultIndex = compareLemmaEntityList(lemmaOldList, lemmaList);
             lemmaOldList = resultIndex;
         }
@@ -143,8 +152,6 @@ public class ApiMainController {
                 addToIndexList(indexLemma1, indexLemma2, list3);
             }
         }
-
-
         return list3;
     }
 

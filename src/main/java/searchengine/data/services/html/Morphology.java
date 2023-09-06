@@ -41,21 +41,6 @@ public class Morphology {
         }
     }
 
-    public List<LemmaEntity> getLemmaEntityListBySite(SiteEntity siteEntity, List<LemmaEntity> lemmaEntityList) {
-        List<LemmaEntity> newList = new ArrayList<>();
-        lemmas.forEach((key, value) -> {
-            LemmaEntity result = lemmaEntityList.stream()
-                    .filter(lemmaEntity -> key.contains(lemmaEntity.getLemma()))
-                    .findAny()
-                    .orElse(new LemmaEntity());
-            result.setLemma(key);
-            int frequency = result.getFrequency() + value;
-            result.setFrequency(frequency);
-            result.setId(siteEntity.getId());
-            newList.add(result);
-        });
-        return newList;
-    }
 
 
     public List<String> createLemmasList(String word) throws IOException {

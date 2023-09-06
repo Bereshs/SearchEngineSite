@@ -1,5 +1,7 @@
 package searchengine.data.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import searchengine.model.PageEntity;
@@ -16,5 +18,6 @@ public interface PageEntityRepository extends JpaRepository<PageEntity, Integer>
     long countAllBySite(SiteEntity site);
 
     PageEntity findById(int id);
+
 
 }

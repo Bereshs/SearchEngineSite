@@ -6,11 +6,12 @@ import searchengine.model.IndexEntity;
 import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
 
+import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.logging.Logger;
 
+@Transactional
 @Service
 public class IndexEntityService {
     private final IndexEntityRepository indexEntityRepository;

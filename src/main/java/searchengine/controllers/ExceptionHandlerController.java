@@ -7,6 +7,7 @@ import searchengine.dto.statistics.SimpleResponse;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.logging.Logger;
 
 @ControllerAdvice
 public class ExceptionHandlerController {

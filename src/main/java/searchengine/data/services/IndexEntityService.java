@@ -10,11 +10,13 @@ import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Logger;
 
 @Transactional
 @Service
 public class IndexEntityService {
     private final IndexEntityRepository indexEntityRepository;
+    private final Logger logger = Logger.getLogger(IndexEntityService.class.getName());
 
     public IndexEntityService(IndexEntityRepository indexEntityRepository) {
         this.indexEntityRepository = indexEntityRepository;
@@ -42,6 +44,8 @@ public class IndexEntityService {
             indexEntities.add(indexEntity);
         });
         saveAll(indexEntities);
+        logger.info("Saving indexes structure for page " + page.getAbsolutePath());
+
     }
 
     public List<IndexEntity> findByLemma(LemmaEntity lemma) {

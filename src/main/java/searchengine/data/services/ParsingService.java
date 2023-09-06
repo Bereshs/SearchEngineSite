@@ -3,12 +3,14 @@ package searchengine.data.services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import searchengine.config.SitesList;
+import searchengine.data.services.html.HtmlDocument;
 import searchengine.data.services.html.HtmlMapPage;
 import searchengine.dto.statistics.SimpleResponse;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.SiteStatus;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
@@ -51,7 +53,7 @@ public class ParsingService {
     }
 
     public boolean createPageIndex(String url, boolean checkChilds) {
-        logger.info("Start indexing page " + url);
+        logger.info("Creating page Index " + url);
         HtmlMapPage.setIndexing(true);
         if (!sitesList.contains(url)) {
             return false;
@@ -61,21 +63,11 @@ public class ParsingService {
         }
         setServicesToHtmlMapPage();
 
-        SiteEntity site = siteEntityService.getByUrl(url);
-        if (site != null) {
-            String relativePath= siteEntityService.getRelativePath(url);
-            PageEntity page = pageEntityService.findByPathAndSiteId(relativePath, site.getId());
-            deleteSearchIndexByPage(page);
+        deleteDataSearch(url);
 
+        SiteEntity site = siteEntityService.getByUrlOrCreate(url);
 
-            if (isRootPath(url, site.getUrl())) {
-
-                deleteSiteAndPageEntities(site);
-            }
-        }
-
-
-        site = siteEntityService.getByUrlOrCreate(url);
+        setSiteTitle(site);
 
         PageEntity mainPage = new PageEntity();
         mainPage.setSite(site);
@@ -86,8 +78,31 @@ public class ParsingService {
 
         addAndRunPool(mapPage);
 
-
         return true;
+    }
+    public void setSiteTitle(SiteEntity site) {
+        try {
+            HtmlDocument document = new HtmlDocument(site.getUrl());
+            site.setName(document.getTitle());
+            siteEntityService.save(site);
+        } catch (IOException e) {
+            site.setLastError("Site unavailable");
+            siteEntityService.saveStatusSite(site, SiteStatus.FAILED);
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public void deleteDataSearch(String url) {
+        SiteEntity site = siteEntityService.getByUrl(url);
+        if (site != null) {
+            String relativePath = siteEntityService.getRelativePath(url);
+            PageEntity page = pageEntityService.findByPathAndSiteId(relativePath, site.getId());
+            deleteSearchIndexByPage(page);
+            if (isRootPath(url, site.getUrl())) {
+                deleteSiteAndPageEntities(site);
+            }
+        }
     }
 
     public boolean isRootPath(String path, String rootPath) {

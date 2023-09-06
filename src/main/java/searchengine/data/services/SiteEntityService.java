@@ -7,6 +7,7 @@ import searchengine.model.SiteEntity;
 import searchengine.model.SiteStatus;
 
 import java.time.LocalDateTime;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,10 +28,11 @@ public class SiteEntityService {
             return siteEntity;
         }
         siteEntity = new SiteEntity();
-        siteEntity.setUrl(url);
+        siteEntity.setUrl(getRootPath(url));
         siteEntity.setName("noname");
         siteEntity.setStatus(SiteStatus.INDEXING);
         save(siteEntity);
+
         siteEntity = siteEntityRepository.getByUrl(getRootPath(url));
         return siteEntity;
     }
@@ -79,5 +81,18 @@ public class SiteEntityService {
     public String getRelativePath(String path) {
         String rootPath=getRootPath(path);
         return path.substring(rootPath.length());
+    }
+
+    public void saveStatusSite(SiteEntity site, SiteStatus siteStatus) {
+        if (!site.getStatus().equals(siteStatus)) {
+            site.setStatus(siteStatus);
+            save(site);
+        }
+    }
+
+    public void saveSiteError(String url, String lastError) {
+        SiteEntity site = siteEntityRepository.getByUrl(url);
+        site.setLastError(lastError);
+        siteEntityRepository.save(site);
     }
 }

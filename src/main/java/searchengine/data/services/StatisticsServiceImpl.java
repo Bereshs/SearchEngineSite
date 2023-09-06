@@ -33,7 +33,7 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     @Override
     public StatisticsResponse getStatistics() {
-        String[] statuses = { "INDEXED", "FAILED", "INDEXING" };
+        String[] statuses = {"INDEXED", "FAILED", "INDEXING"};
         String[] errors = {
                 "Ошибка индексации: главная страница сайта не доступна",
                 "Ошибка индексации: сайт не доступен",
@@ -46,28 +46,14 @@ public class StatisticsServiceImpl implements StatisticsService {
 
         List<DetailedStatisticsItem> detailed = new ArrayList<>();
         List<Site> sitesList = sites.getSites();
-        for(int i = 0; i < sitesList.size(); i++) {
+        for (int i = 0; i < sitesList.size(); i++) {
             Site site = sitesList.get(i);
-            DetailedStatisticsItem item = new DetailedStatisticsItem();
-            item.setName(site.getName());
-            item.setUrl(site.getUrl());
-            SiteEntity siteEntity = siteEntityRepository.getByUrl(site.getUrl());
-            if(siteEntity==null) {
-                siteEntity = siteEntityRepository.getByUrl(site.getUrl()+"/");
-            }
-            if(siteEntity==null) {
+            DetailedStatisticsItem item = getDetailedItem(site);
+            if (item == null) {
                 continue;
             }
-
-            int pages = (int) pageEntityRepository.countAllBySite(siteEntity);
-            int lemmas = (int) lemmaEntityRepository.countAllBySite(siteEntity);
-            item.setPages(pages);
-            item.setLemmas(lemmas);
-            item.setStatus(siteEntity.getStatus().toString());
-            item.setError(siteEntity.getLastError()==null?"":siteEntity.getLastError());
-            item.setStatusTime(siteEntity.getStatusTime().toInstant(ZoneOffset.ofTotalSeconds(10800)).toEpochMilli());
-            total.setPages(total.getPages() + pages);
-            total.setLemmas(total.getLemmas() + lemmas);
+            total.setPages(total.getPages() + item.getPages());
+            total.setLemmas(total.getLemmas() + item.getLemmas());
             detailed.add(item);
         }
 
@@ -78,5 +64,27 @@ public class StatisticsServiceImpl implements StatisticsService {
         response.setStatistics(data);
         response.setResult(true);
         return response;
+    }
+
+    private DetailedStatisticsItem getDetailedItem(Site site) {
+        DetailedStatisticsItem item = new DetailedStatisticsItem();
+        item.setName(site.getName());
+        item.setUrl(site.getUrl());
+        SiteEntity siteEntity = siteEntityRepository.getByUrl(site.getUrl());
+        if (siteEntity == null) {
+            siteEntity = siteEntityRepository.getByUrl(site.getUrl() + "/");
+        }
+        if (siteEntity == null) {
+            return null;
+        }
+
+        int pages = (int) pageEntityRepository.countAllBySite(siteEntity);
+        int lemmas = (int) lemmaEntityRepository.countAllBySite(siteEntity);
+        item.setPages(pages);
+        item.setLemmas(lemmas);
+        item.setStatus(siteEntity.getStatus().toString());
+        item.setError(siteEntity.getLastError() == null ? "" : siteEntity.getLastError());
+        item.setStatusTime(siteEntity.getStatusTime().toInstant(ZoneOffset.ofTotalSeconds(10800)).toEpochMilli());
+        return item;
     }
 }

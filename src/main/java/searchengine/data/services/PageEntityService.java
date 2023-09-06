@@ -65,5 +65,12 @@ public class PageEntityService {
 
     public PageEntity findById(int id) {return pageEntityRepository.findById(id);}
 
+    public void savePageError(PageEntity mainPage, String errorMessage) {
+        mainPage.setCode(404);
+        mainPage.setContent(errorMessage);
+        pageEntityRepository.save(mainPage);
+
+    }
+
 }
 

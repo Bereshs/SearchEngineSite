@@ -48,26 +48,24 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
         }
 
         PageEntity getPage = pageEntityService.findByPathAndSiteId(mainPage.getPath(), mainPage.getSite().getId());
+
         if (getPage != null || !mainPage.isValid()) {
             return 0;
         }
 
-
         synchronized (viewedLinkList) {
-
             viewedLinkList.add(mainPage.getAbsolutePath());
-            logger.info("viewwed links=" + viewedLinkList);
         }
 
         HtmlDocument document = createPageIndex(mainPage.getAbsolutePath());
         if (!checkChilds) {
             return 0;
         }
+
         Set<PageEntity> currentPageLinks = document.getChildPageList(mainPage.getSite());
         if (currentPageLinks.isEmpty()) {
             return 0;
         }
-
 
         addToTaskList(currentPageLinks);
 
@@ -113,30 +111,22 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
             HtmlDocument document = new HtmlDocument(url);
             Morphology morphology = new Morphology();
             SiteEntity site = siteEntityService.getByDocument(document);
-            if (!site.getStatus().equals(SiteStatus.INDEXING)) {
-                site.setStatus(SiteStatus.INDEXING);
-                siteEntityService.save(site);
-            }
+            siteEntityService.saveStatusSite(site, SiteStatus.INDEXING);
             morphology.createLemmasMap(document.getText());
-            logger.info("created " + morphology.getLemmas().size() + " lemmas  on " + url);
+
             PageEntity page = pageEntityService.getBySiteAndDocument(site, document);
             HashMap<String, Integer> lemmasMap = morphology.getLemmas();
             List<LemmaEntity> lemmaEntities = lemmaEntityService.saveLemmasFromList(lemmasMap, site);
-            logger.info("Saving indexes structure for page " + url);
             indexEntityService.saveIndexFromList(lemmaEntities, page, lemmasMap);
-            site.setStatus(SiteStatus.INDEXED);
-            siteEntityService.save(site);
+            siteEntityService.saveStatusSite(site, SiteStatus.INDEXED);
+
             logger.info("Stop indexing page " + url);
             return document;
 
         } catch (IOException e) {
             String errorMessage = "Error indexing page " + mainPage.getPath() + " has  error " + e.getLocalizedMessage();
-            SiteEntity site = siteEntityService.getByUrl(url);
-            site.setLastError(e.getLocalizedMessage());
-            siteEntityService.save(site);
-            mainPage.setCode(999);
-            mainPage.setContent(e.getLocalizedMessage());
-            pageEntityService.save(mainPage);
+            siteEntityService.saveSiteError(url, errorMessage);
+            pageEntityService.savePageError(mainPage, errorMessage);
             logger.info(errorMessage);
             return null;
         }

@@ -39,6 +39,9 @@ public class Morphology {
                     .substring(firstIndex, lastIndex)));
             firstIndex = lastIndex + 1;
         }
+
+        logger.info("created " + getLemmas().size());
+
     }
 
 

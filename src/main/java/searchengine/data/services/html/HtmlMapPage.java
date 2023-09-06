@@ -59,6 +59,7 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
 
         HtmlDocument document = createPageIndex(mainPage.getAbsolutePath());
         if (!checkChilds) {
+            setIndexing(false);
             return 0;
         }
 

@@ -76,7 +76,7 @@ public class ParsingService {
 
         mapPage.setCheckChilds(checkChilds);
 
-        addAndRunPool(mapPage);
+        addAndRunPool(mapPage, site);
 
         return true;
     }
@@ -111,16 +111,19 @@ public class ParsingService {
 
 
     public void createSiteMap(String url) {
+        HtmlMapPage.setIndexing(true);
 
         createPageIndex(url, true);
         logger.info("Stop indexing " + url + " found " + HtmlMapPage.getViewedLinkList().size() + " elements");
+
     }
 
 
-    public void addAndRunPool(HtmlMapPage pageHtml) {
+    public void addAndRunPool(HtmlMapPage pageHtml, SiteEntity site) {
         pool.execute(pageHtml);
 
         loopPrintPoolInformation(pageHtml);
+        siteEntityService.saveStatusSite(site, SiteStatus.INDEXED);
     }
 
     public void stop() {

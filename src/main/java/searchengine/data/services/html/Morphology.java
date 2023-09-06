@@ -40,7 +40,7 @@ public class Morphology {
             firstIndex = lastIndex + 1;
         }
 
-        logger.info("created " + getLemmas().size());
+        logger.info("created " + getLemmas().size()+" lemmas");
 
     }
 

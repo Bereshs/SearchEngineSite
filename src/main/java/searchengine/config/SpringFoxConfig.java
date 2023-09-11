@@ -23,7 +23,7 @@ public class SpringFoxConfig {
     public ApiInfo apiInfo() {
         return new ApiInfo(
                 "Web search engine",
-                "API web serach engine",
+                "API web search engine",
                 "1.0",
                 "https://t.me/bereshs",
                 new Contact("API owner", "Sergey Bereshpolov", "bereshs@mail.ru").toString(),

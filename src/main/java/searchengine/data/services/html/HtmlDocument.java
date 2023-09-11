@@ -5,6 +5,7 @@ import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import searchengine.config.ConnectionConfig;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 
@@ -22,10 +23,18 @@ public class HtmlDocument {
     @Getter
     private final int statusCode;
 
-    public HtmlDocument(String url) throws IOException {
-        Connection.Response connection = getConnection(url);
+    public HtmlDocument(String url, ConnectionConfig config) throws IOException {
+        Connection.Response connection = getConnection(url, config);
         this.statusCode = connection.statusCode();
         this.document = connection.parse();
+        if(statusCode>399 && statusCode<499) {
+            try {
+                Thread.sleep(500);
+                connection =getConnection(url, config);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public Set<PageEntity> getChildPageList(SiteEntity siteEntity) {
@@ -89,13 +98,10 @@ public class HtmlDocument {
         return null;
     }
 
-    private Connection.Response getConnection(String absolutePath) throws IOException {
-        String userAgent = "Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6";
-        String referrer = "http://www.google.com";
-
+    private Connection.Response getConnection(String absolutePath, ConnectionConfig config) throws IOException {
         return Jsoup.connect(absolutePath)
-                .userAgent(userAgent)
-                .referrer(referrer)
+                .userAgent(config.getUserAgent())
+                .referrer(config.getReferrer())
                 .execute();
     }
 

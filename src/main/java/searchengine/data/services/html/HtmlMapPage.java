@@ -3,6 +3,7 @@ package searchengine.data.services.html;
 
 import lombok.Getter;
 import lombok.Setter;
+import searchengine.config.ConnectionConfig;
 import searchengine.data.services.LemmaEntityService;
 import searchengine.data.services.PageEntityService;
 import searchengine.data.services.IndexEntityService;
@@ -35,10 +36,13 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
 
     @Setter
     private boolean checkChilds;
+    @Setter
+    private ConnectionConfig config;
 
-    public HtmlMapPage(PageEntity mainPage) {
+    public HtmlMapPage(PageEntity mainPage, ConnectionConfig config) {
         this.mainPage = mainPage;
         checkChilds = true;
+        this.config = config;
     }
 
     @Override
@@ -83,7 +87,7 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
                 continue;
             }
             if (viewedLinkContains(link.getAbsolutePath())) {
-                HtmlMapPage task = new HtmlMapPage(link);
+                HtmlMapPage task = new HtmlMapPage(link, config);
                 task.setMainPage(link);
                 task.fork();
                 taskList.add(task);
@@ -109,7 +113,7 @@ public class HtmlMapPage extends RecursiveTask<Integer> {
         }
         logger.info("Start indexing page " + url);
         try {
-            HtmlDocument document = new HtmlDocument(url);
+            HtmlDocument document = new HtmlDocument(url, config);
             Morphology morphology = new Morphology();
             SiteEntity site = siteEntityService.getByDocument(document);
             siteEntityService.saveStatusSite(site, SiteStatus.INDEXING);

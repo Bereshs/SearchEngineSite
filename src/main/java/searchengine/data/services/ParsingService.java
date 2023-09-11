@@ -2,6 +2,7 @@ package searchengine.data.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import searchengine.config.ConnectionConfig;
 import searchengine.config.SitesList;
 import searchengine.data.services.html.HtmlDocument;
 import searchengine.data.services.html.HtmlMapPage;
@@ -25,16 +26,18 @@ public class ParsingService {
     private final LemmaEntityService lemmaEntityService;
     private final IndexEntityService indexEntityService;
 
+    private final ConnectionConfig config;
     private final Logger logger = Logger.getLogger(ParsingService.class.getName());
     private ForkJoinPool pool = new ForkJoinPool();
 
     @Autowired
-    public ParsingService(SitesList sitesList, SiteEntityService siteEntityService, PageEntityService pageEntityService, LemmaEntityService lemmaEntityService, IndexEntityService indexEntityService) {
+    public ParsingService(SitesList sitesList, SiteEntityService siteEntityService, PageEntityService pageEntityService, LemmaEntityService lemmaEntityService, IndexEntityService indexEntityService, ConnectionConfig config) {
         this.sitesList = sitesList;
         this.siteEntityService = siteEntityService;
         this.pageEntityService = pageEntityService;
         this.lemmaEntityService = lemmaEntityService;
         this.indexEntityService = indexEntityService;
+        this.config = config;
     }
 
     public void indexingSite(String url) {
@@ -72,7 +75,7 @@ public class ParsingService {
         PageEntity mainPage = new PageEntity();
         mainPage.setSite(site);
         mainPage.setPath(url);
-        HtmlMapPage mapPage = new HtmlMapPage(mainPage);
+        HtmlMapPage mapPage = new HtmlMapPage(mainPage, config);
 
         mapPage.setCheckChilds(checkChilds);
 
@@ -82,7 +85,7 @@ public class ParsingService {
     }
     public void setSiteTitle(SiteEntity site) {
         try {
-            HtmlDocument document = new HtmlDocument(site.getUrl());
+            HtmlDocument document = new HtmlDocument(site.getUrl(), config);
             site.setName(document.getTitle());
             siteEntityService.save(site);
         } catch (IOException e) {

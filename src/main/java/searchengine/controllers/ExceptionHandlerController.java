@@ -30,6 +30,7 @@ public class ExceptionHandlerController {
     public ResponseEntity<SimpleResponse> allException(Exception exception) {
         SimpleResponse response = new SimpleResponse(false);
         response.setError(exception.getMessage());
+        exception.printStackTrace();
         return ResponseEntity.ok(response);
 
     }

@@ -40,8 +40,9 @@ public class ApiMainController {
 
     private final Logger logger = Logger.getLogger(ApiMainController.class.getName());
 
+    private final SitesList sitesList;
     @Autowired
-    public ApiMainController(StatisticsService statisticsService, ParsingService parsingService, SitesList sitesIndexingList, LemmaEntityService lemmaEntityService, PageEntityService pageEntityService, IndexEntityService indexEntityService, SiteEntityService siteEntityService) {
+    public ApiMainController(StatisticsService statisticsService, ParsingService parsingService, SitesList sitesIndexingList, LemmaEntityService lemmaEntityService, PageEntityService pageEntityService, IndexEntityService indexEntityService, SiteEntityService siteEntityService, SitesList sitesList) {
         this.statisticsService = statisticsService;
         this.parsingService = parsingService;
         this.sitesIndexingList = sitesIndexingList;
@@ -49,6 +50,7 @@ public class ApiMainController {
         this.pageEntityService = pageEntityService;
         this.indexEntityService = indexEntityService;
         this.siteEntityService = siteEntityService;
+        this.sitesList = sitesList;
     }
 
     @GetMapping("/statistics")
@@ -94,20 +96,26 @@ public class ApiMainController {
         Morphology morphology = new Morphology();
         SearchResponse response = new SearchResponse();
         morphology.createLemmasMap(query);
-        SiteEntity siteEntity = siteEntityService.getByUrl(site);
-        List<LemmaEntity> list = lemmaEntityService.getlemmaListByLemmaList(morphology.getLemmas(), siteEntity);;
-        List<IndexEntity> listIndex = getUniqueIndexEntities(list);
-        float maxRating = getMaxRatingPage(listIndex);
-        listIndex.forEach(indexPage -> response.getData().add(createSearchDataFromIndexPage(indexPage, maxRating, list)));
+
+        sitesList.getSites().forEach(validSite -> {
+            if(validSite.getUrl().equals(site) || site==null) {
+                SiteEntity siteEntity = siteEntityService.getByUrl(validSite.getUrl());
+                List<LemmaEntity> list = lemmaEntityService.getlemmaListByLemmaList(morphology.getLemmas(), siteEntity);
+                List<IndexEntity> listIndex = getUniqueIndexEntities(list);
+                float maxRating = getMaxRatingPage(listIndex);
+                listIndex.forEach(indexPage -> response.getData().add(createSearchDataFromIndexPage(indexPage, maxRating, list)));
+            }
+        });
+
 
         Collections.sort(response.getData());
-
         response.setCount(response.getData().size());
         response.setData(getPageOfList(response.getData(), offset, limit));
         response.setResult(true);
 
         return ResponseEntity.ok(response);
     }
+
 
     public List<SearchData> getPageOfList(List<SearchData> list, Integer offset, Integer limit) {
         List<SearchData> result = new ArrayList<>();
@@ -134,6 +142,9 @@ public class ApiMainController {
 
 
     private List<IndexEntity> getUniqueIndexEntities(List<LemmaEntity> list) {
+        if(list.isEmpty()) {
+            return new ArrayList<>();
+        }
         List<IndexEntity> lemmaOldList = indexEntityService.findByLemma(list.get(0));
         List<IndexEntity> resultIndex = lemmaOldList;
         for (int i = 1; i < list.size(); i++) {
@@ -190,7 +201,7 @@ public class ApiMainController {
     private String getTitleFromHtml(String html) {
         Pattern p = Pattern.compile("<title>(.*?)</title>");
         Matcher m = p.matcher(html);
-        while (m.find()) {
+        if(m.find()) {
             return m.group(1);
         }
         return null;

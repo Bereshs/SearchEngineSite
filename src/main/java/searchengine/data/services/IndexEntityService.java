@@ -22,10 +22,6 @@ public class IndexEntityService {
         this.indexEntityRepository = indexEntityRepository;
     }
 
-    private void save(IndexEntity indexEntity) {
-        indexEntityRepository.save(indexEntity);
-    }
-
     public void deleteAllByPage(PageEntity page) {
         indexEntityRepository.deleteAllByPage(page);
     }
@@ -47,7 +43,6 @@ public class IndexEntityService {
         logger.info("Saving indexes structure for page " + page.getAbsolutePath());
 
     }
-
     public List<IndexEntity> findByLemma(LemmaEntity lemma) {
         return indexEntityRepository.findByLemma(lemma);
     }

@@ -41,9 +41,7 @@ public class ParsingService {
     }
 
     public void indexingSite(String url) {
-
         createSiteMap(url);
-
     }
 
     public SimpleResponse indexPage(String url) {

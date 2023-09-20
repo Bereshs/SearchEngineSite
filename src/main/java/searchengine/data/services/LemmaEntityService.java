@@ -1,14 +1,12 @@
 package searchengine.data.services;
 
 import org.springframework.stereotype.Service;
-import searchengine.config.Site;
 import searchengine.data.repository.LemmaEntityRepository;
 import searchengine.model.LemmaEntity;
 import searchengine.model.SiteEntity;
 
 import javax.transaction.Transactional;
 import java.util.*;
-import java.util.logging.Logger;
 
 
 @Transactional
@@ -20,16 +18,8 @@ public class LemmaEntityService {
         this.lemmaEntityRepository = lemmaEntityRepository;
     }
 
-    public LemmaEntity getLemmaBySite(String lemma, SiteEntity site) {
-        return lemmaEntityRepository.getLemmaEntityByLemmaAndSite(lemma, site);
-    }
-
     public void saveAll(Iterable<LemmaEntity> lemmas) {
         lemmaEntityRepository.saveAll(lemmas);
-    }
-
-    public List<LemmaEntity> getLemmaEntitiesBySite(SiteEntity site) {
-        return lemmaEntityRepository.getLemmaEntitiesBySite(site);
     }
 
     public void deleteAllBySite(SiteEntity site) {
@@ -64,20 +54,11 @@ public class LemmaEntityService {
         return newList;
     }
 
-    public long getCount() {
-        return lemmaEntityRepository.count();
-    }
-
-
-    public List<LemmaEntity> getAllByLemma(String lemma) {
-        return lemmaEntityRepository.getAllByLemmaOrderByFrequencyAsc(lemma);
-    }
-
 
     public List<LemmaEntity> getlemmaListByLemmaList(HashMap<String, Integer> lemmaList, SiteEntity site) {
         List<LemmaEntity> lemmaEntityListFromDb = new ArrayList<>();
         lemmaList.forEach((lemma, value) -> {
-            LemmaEntity lemmaEntity = new LemmaEntity();
+            LemmaEntity lemmaEntity;
             if (site != null) {
                 lemmaEntity = lemmaEntityRepository.findByLemmaAndSite(lemma, site);
             } else {
@@ -89,5 +70,9 @@ public class LemmaEntityService {
         });
         Collections.sort(lemmaEntityListFromDb);
         return lemmaEntityListFromDb;
+    }
+
+    public void save(LemmaEntity lemma) {
+        lemmaEntityRepository.save(lemma);
     }
 }

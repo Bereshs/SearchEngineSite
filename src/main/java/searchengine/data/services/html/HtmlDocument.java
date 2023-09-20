@@ -12,7 +12,6 @@ import searchengine.model.SiteEntity;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,7 +38,7 @@ public class HtmlDocument {
 
     public Set<PageEntity> getChildPageList(SiteEntity siteEntity) {
         Set<PageEntity> pageList = new HashSet<>();
-        Elements elements = new Elements();
+        Elements elements;
         elements = document.select("a[href]");
         elements.forEach(element -> {
             PageEntity page = new PageEntity();

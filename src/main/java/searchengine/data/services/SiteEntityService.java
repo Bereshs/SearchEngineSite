@@ -60,10 +60,6 @@ public class SiteEntityService {
         siteEntityRepository.deleteById(id);
     }
 
-    public long getCount() {
-        return siteEntityRepository.count();
-    }
-
     public String getRootPath(String path) {
         if (!path.endsWith("/")) {
             path = path + "/";
@@ -95,4 +91,5 @@ public class SiteEntityService {
         site.setLastError(lastError);
         siteEntityRepository.save(site);
     }
-}
+
+  }
